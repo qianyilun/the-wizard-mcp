@@ -1,0 +1,186 @@
+metadata:
+  name: "Spec-Then-Code Workflow"
+  description: "RIPER-5 guided workflow for Spec-Then-Code collaboration in The Wizard."
+  version: 1
+  start_step: "COLLECT_CONTEXT"
+  modes:
+    - "RESEARCH"
+    - "INNOVATE"
+    - "PLAN"
+    - "EXECUTE"
+    - "REVIEW"
+
+steps:
+  - id: "COLLECT_CONTEXT"
+    title: "Collect Problem Context"
+    mode: "RESEARCH"
+    type: "ui_prompt"
+    component: "initial_request_form"
+    instructions: |
+      Capture the task statement, constraints, and success criteria from the developer.
+      Confirm the summary before advancing to mode selection.
+    actions:
+      - id: "SUBMIT_CONTEXT"
+        label: "Continue to Mode Selection"
+        next_step_id: "INSIGHT_CLASSIFICATION"
+        capture_snapshot: true
+
+  - id: "INSIGHT_CLASSIFICATION"
+    title: "Select Collaboration Mode"
+    mode: "INNOVATE"
+    type: "ui_prompt"
+    component: "mode_selector"
+    instructions: |
+      Present the four RIPER-5 collaboration modes. For V1 the Spec-Then-Code
+      path is the only fully supported option, but other options should be shown
+      for completeness.
+    actions:
+      - id: "SELECT_SPEC_THEN_CODE"
+        label: "Spec-Then-Code"
+        next_step_id: "GENERATE_BLUEPRINT"
+        capture_snapshot: true
+      - id: "RETURN_TO_RESEARCH"
+        label: "Refine Context"
+        next_step_id: "COLLECT_CONTEXT"
+        rewind_to_step: "COLLECT_CONTEXT"
+
+  - id: "GENERATE_BLUEPRINT"
+    title: "Generate System Blueprint"
+    mode: "PLAN"
+    type: "llm_task"
+    prompt_template: |
+      You are operating in the PLAN mode of the RIPER-5 protocol. Using the
+      following context from the developer:
+      ---
+      {{ user_request }}
+      ---
+      Produce a Markdown response containing two Mermaid diagrams:
+      1. A sequence diagram describing the primary execution path.
+      2. A class diagram highlighting key modules and their relationships.
+      Return only the Mermaid code blocks and short captions for each.
+    output_key: "blueprint_mermaid"
+    on_success: "REVIEW_BLUEPRINT"
+    on_failure: "INSIGHT_CLASSIFICATION"
+
+  - id: "REVIEW_BLUEPRINT"
+    title: "Review Blueprint"
+    mode: "PLAN"
+    type: "ui_prompt"
+    component: "blueprint_editor"
+    instructions: |
+      Allow the developer to edit the generated Mermaid diagrams directly, or
+      request a regeneration. The developer must confirm before proceeding.
+    actions:
+      - id: "CONFIRM_BLUEPRINT"
+        label: "Confirm Blueprint"
+        next_step_id: "GENERATE_TEST_MATRIX"
+        capture_snapshot: true
+      - id: "REGENERATE_BLUEPRINT"
+        label: "Regenerate"
+        next_step_id: "GENERATE_BLUEPRINT"
+      - id: "RETURN_TO_RESEARCH_FROM_PLAN"
+        label: "Request More Context"
+        next_step_id: "COLLECT_CONTEXT"
+        rewind_to_step: "COLLECT_CONTEXT"
+
+  - id: "GENERATE_TEST_MATRIX"
+    title: "Generate Test Matrix"
+    mode: "PLAN"
+    type: "llm_task"
+    prompt_template: |
+      You are operating in the PLAN mode, focusing on test design prior to
+      implementation. Based on the confirmed blueprint and context below,
+      enumerate the critical unit and integration test scenarios as a table with
+      the columns: Description, Inputs, Expected Outcome.
+      ---
+      Context: {{ user_request }}
+      Blueprint: {{ blueprint_mermaid }}
+      ---
+      Respond with JSON containing a list of objects with keys
+      "description", "inputs", and "expected".
+    output_key: "test_matrix"
+    on_success: "REVIEW_TEST_MATRIX"
+    on_failure: "REVIEW_BLUEPRINT"
+
+  - id: "REVIEW_TEST_MATRIX"
+    title: "Review Test Matrix"
+    mode: "PLAN"
+    type: "ui_prompt"
+    component: "test_case_table"
+    instructions: |
+      Display the generated test cases in an editable table. The developer can
+      tweak entries, delete rows, or request regeneration. Approval is required
+      before moving to Execute mode.
+    actions:
+      - id: "APPROVE_TEST_MATRIX"
+        label: "Approve Tests & Generate Code"
+        next_step_id: "GENERATE_IMPLEMENTATION"
+        capture_snapshot: true
+      - id: "REGENERATE_TEST_MATRIX"
+        label: "Regenerate Tests"
+        next_step_id: "GENERATE_TEST_MATRIX"
+      - id: "REVERT_TO_BLUEPRINT"
+        label: "Revisit Blueprint"
+        next_step_id: "REVIEW_BLUEPRINT"
+        rewind_to_step: "REVIEW_BLUEPRINT"
+
+  - id: "GENERATE_IMPLEMENTATION"
+    title: "Generate Implementation"
+    mode: "EXECUTE"
+    type: "llm_task"
+    prompt_template: |
+      You are operating in the EXECUTE mode. Implement the required changes using
+      the approved blueprint and test matrix as constraints. Respond with a
+      unified diff (patch format) that can be applied to the repository.
+      ---
+      Context: {{ user_request }}
+      Blueprint: {{ blueprint_mermaid }}
+      Test Matrix: {{ test_matrix }}
+      ---
+      Ensure code matches the documented tests and refrain from modifying
+      unrelated files.
+    output_key: "implementation_patch"
+    on_success: "GENERATE_TRACE"
+    on_failure: "REVIEW_TEST_MATRIX"
+
+  - id: "GENERATE_TRACE"
+    title: "Generate Code Trace"
+    mode: "REVIEW"
+    type: "llm_task"
+    prompt_template: |
+      You are operating in the REVIEW mode. Analyze the generated implementation
+      and produce a Mermaid sequence diagram that reflects the actual code path.
+      Compare it with the planned blueprint to highlight any divergences.
+      Structure the response as Markdown with two Mermaid diagrams named
+      "Planned" and "Implemented" and a bullet list of differences.
+      ---
+      Blueprint: {{ blueprint_mermaid }}
+      Implementation: {{ implementation_patch }}
+      ---
+    output_key: "refine_artifacts"
+    on_success: "REVIEW_TRACE"
+    on_failure: "GENERATE_IMPLEMENTATION"
+
+  - id: "REVIEW_TRACE"
+    title: "Review Refinement Summary"
+    mode: "REVIEW"
+    type: "ui_prompt"
+    component: "refine_compare"
+    instructions: |
+      Present the planned versus implemented diagrams and the difference summary
+      side by side. The developer can accept the changes or request revisions.
+    actions:
+      - id: "ACCEPT_IMPLEMENTATION"
+        label: "Accept Code"
+        next_step_id: "WORKFLOW_COMPLETE"
+        capture_snapshot: true
+      - id: "REQUEST_REWORK"
+        label: "Request Rework"
+        next_step_id: "REVIEW_TEST_MATRIX"
+        rewind_to_step: "REVIEW_TEST_MATRIX"
+
+  - id: "WORKFLOW_COMPLETE"
+    title: "Workflow Complete"
+    mode: "REVIEW"
+    type: "terminal"
+    instructions: "All RIPER-5 stages are complete."
