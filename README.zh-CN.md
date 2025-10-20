@@ -1,5 +1,9 @@
 # MCP Feedback Enhanced（交互反馈 MCP）
 
+``` shell
+MCP_DEBUG=true uv run python -m mcp_feedback_enhanced test --web
+```
+
 **🌐 语言切换 / Language:** [English](README.md) | [繁體中文](README.zh-TW.md) | **简体中文**
 
 **原作者：** [Fábio Ferreira](https://x.com/fabiomlferreira) | [原始项目](https://github.com/noopstudios/interactive-feedback-mcp) ⭐

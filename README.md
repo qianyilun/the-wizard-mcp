@@ -414,3 +414,12 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 ---
 **🌟 Welcome to Star and share with more developers!**
+
+## 🧙 The Wizard (Spec-Then-Code)
+
+The Wizard is an experimental Spec-Then-Code workflow for RIPER-5 style development.
+- Contributor onboarding and coding conventions now live in `AGENTS.md`.
+- New modules are scaffolded under `src/mcp_feedback_enhanced/wizard/` with a Streamlit entry point at `wizard_app.py`.
+- Configuration assets will live under `src/mcp_feedback_enhanced/config/spec_then_code/` as we develop the workflow engine.
+
+Use `make dev-setup` to install dependencies via uv, then run `python -m mcp_feedback_enhanced.wizard.wizard_app` to launch the placeholder UI scaffolding while core features are implemented.
