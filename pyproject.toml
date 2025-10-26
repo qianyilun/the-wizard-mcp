@@ -1,7 +1,7 @@
 [project]
-name = "mcp-feedback-enhanced"
+name = "the-wizard-mcp"
 version = "2.6.0"
-description = "Enhanced MCP server for interactive user feedback and command execution in AI-assisted development, featuring dual interface support (Web UI and Desktop Application) with intelligent environment detection and cross-platform compatibility."
+description = "The Wizard MCP - RIPER-5 Spec-Then-Code workflow with Diagram-as-a-Spec methodology. Enhanced MCP server with interactive feedback and The Wizard guided development workflow."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [

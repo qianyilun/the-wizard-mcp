@@ -1,27 +1,17 @@
-"""Streamlit entry point for the Wizard Spec-Then-Code workflow.
+"""The Wizard workflow application - Web UI based entry point.
 
-The implementation will be introduced in later epics. This placeholder keeps the
-module importable and defines a top-level ``main`` function so that developers
-can run ``python -m mcp_feedback_enhanced.wizard.wizard_app`` during
-development.
+This module is deprecated. The Wizard now uses FastAPI + WebSocket based Web UI
+integrated with the MCP server. See wizard/manager.py for the main entry point.
 """
 
 from __future__ import annotations
 
-import streamlit as st
-
-from .guide_engine import WorkflowEngine
-
 
 def main() -> None:
-    """Placeholder application entry point."""
-
-    st.title("The Wizard - Spec-Then-Code")
-    st.info(
-        "Wizard UI scaffolding is under construction."
-        " This screen exists to validate module imports."
-    )
-    WorkflowEngine()
+    """Deprecated entry point - use MCP tool wizard_start instead."""
+    print("The Wizard now runs as part of the MCP server.")
+    print("Please use the 'wizard_start' MCP tool from Cursor.")
+    print("See docs/wizard/user-guide.md for usage instructions.")
 
 
 if __name__ == "__main__":
