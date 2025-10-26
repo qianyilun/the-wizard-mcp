@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Wizard - Spec-Then-Code Workflow</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="stylesheet" href="/static/css/wizard-main.css">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .wizard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        /* Header */
+        .wizard-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 24px 32px;
+        }
+
+        .wizard-title {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .wizard-subtitle {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        /* Stage Progress Bar */
+        .stage-progress {
+            display: flex;
+            justify-content: space-between;
+            padding: 24px 32px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .stage-item {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            padding: 12px;
+            cursor: default;
+        }
+
+        .stage-item::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: -50%;
+            right: 50%;
+            height: 3px;
+            background: #e0e0e0;
+            z-index: 0;
+        }
+
+        .stage-item:first-child::before {
+            display: none;
+        }
+
+        .stage-item.completed::before {
+            background: #4caf50;
+        }
+
+        .stage-badge {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            color: #757575;
+            line-height: 40px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .stage-item.completed .stage-badge {
+            background: #4caf50;
+            color: white;
+        }
+
+        .stage-item.active .stage-badge {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+        }
+
+        .stage-label {
+            font-size: 12px;
+            color: #757575;
+            font-weight: 500;
+        }
+
+        .stage-item.active .stage-label {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        .wizard-content {
+            padding: 32px;
+            min-height: 500px;
+        }
+
+        .stage-content {
+            display: none;
+        }
+
+        .stage-content.active {
+            display: block;
+        }
+
+        /* Mermaid Editor */
+        .mermaid-editor {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            height: 600px;
+        }
+
+        .editor-pane, .preview-pane {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pane-header {
+            background: #f5f5f5;
+            padding: 12px 16px;
+            border-bottom: 2px solid #e0e0e0;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .pane-header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .btn-icon:hover {
+            background: #e0e0e0;
+        }
+
+        .editor-textarea {
+            flex: 1;
+            border: none;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+        }
+
+        .preview-container {
+            flex: 1;
+            padding: 16px;
+            overflow: auto;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-error {
+            color: #f44336;
+            padding: 16px;
+            background: #ffebee;
+            border-radius: 4px;
+            margin: 16px;
+        }
+
+        /* Action Buttons */
+        .wizard-actions {
+            padding: 24px 32px;
+            border-top: 1px solid #e0e0e0;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #5568d3;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #f5f7ff;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-dot.disconnected {
+            background: #f44336;
+            animation: none;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 48px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Test Cases Table */
+        .test-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+        }
+
+        .test-table th,
+        .test-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .test-table th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .test-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        /* Code Display */
+        .code-display {
+            background: #f5f5f5;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="wizard-container">
+        <!-- Header -->
+        <div class="wizard-header">
+            <div class="wizard-title">🧙 The Wizard</div>
+            <div class="wizard-subtitle">Spec-Then-Code RIPER-5 Workflow</div>
+        </div>
+
+        <!-- Stage Progress -->
+        <div class="stage-progress" id="stageProgress">
+            <div class="stage-item" data-stage="context">
+                <div class="stage-badge">1</div>
+                <div class="stage-label">Context</div>
+            </div>
+            <div class="stage-item" data-stage="mode">
+                <div class="stage-badge">2</div>
+                <div class="stage-label">Mode</div>
+            </div>
+            <div class="stage-item active" data-stage="plan">
+                <div class="stage-badge">3</div>
+                <div class="stage-label">Blueprint</div>
+            </div>
+            <div class="stage-item" data-stage="tests">
+                <div class="stage-badge">4</div>
+                <div class="stage-label">Tests</div>
+            </div>
+            <div class="stage-item" data-stage="code">
+                <div class="stage-badge">5</div>
+                <div class="stage-label">Code</div>
+            </div>
+            <div class="stage-item" data-stage="review">
+                <div class="stage-badge">6</div>
+                <div class="stage-label">Review</div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="wizard-content">
+            <!-- Plan Stage: Mermaid Editor -->
+            <div class="stage-content active" id="planStage">
+                <h2 style="margin-bottom: 16px; color: #333;">Blueprint Design</h2>
+                <p style="margin-bottom: 24px; color: #666;">Edit the Mermaid diagram or confirm to proceed.</p>
+
+                <div class="mermaid-editor">
+                    <div class="editor-pane">
+                        <div class="pane-header">
+                            <span>📝 Mermaid Source</span>
+                            <div class="pane-header-actions">
+                                <button class="btn-icon" id="btnUndo" title="Undo">↶</button>
+                                <button class="btn-icon" id="btnRedo" title="Redo">↷</button>
+                            </div>
+                        </div>
+                        <textarea class="editor-textarea" id="mermaidSource" placeholder="Enter Mermaid diagram code here...">
+graph TD
+    A[User Request] --> B{Validate Input}
+    B -->|Valid| C[Process Data]
+    B -->|Invalid| D[Return Error]
+    C --> E[Save to Database]
+    E --> F[Return Success]
+                        </textarea>
+                    </div>
+                    <div class="preview-pane">
+                        <div class="pane-header">
+                            <span>👁️ Preview</span>
+                            <div class="pane-header-actions">
+                                <button class="btn-icon" id="btnZoomIn" title="Zoom In">🔍+</button>
+                                <button class="btn-icon" id="btnZoomOut" title="Zoom Out">🔍−</button>
+                            </div>
+                        </div>
+                        <div class="preview-container" id="mermaidPreview">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                                <div>Rendering diagram...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other stages (placeholder for now) -->
+            <div class="stage-content" id="testStage">
+                <h2>Test Cases Review</h2>
+                <p>Test cases will appear here...</p>
+            </div>
+
+            <div class="stage-content" id="codeStage">
+                <h2>Generated Code</h2>
+                <p>Generated code will appear here...</p>
+            </div>
+
+            <div class="stage-content" id="reviewStage">
+                <h2>Review & Refine</h2>
+                <p>Review comparison will appear here...</p>
+            </div>
+        </div>
+
+        <!-- Actions Footer -->
+        <div class="wizard-actions">
+            <div class="status-indicator">
+                <div class="status-dot" id="connectionStatus"></div>
+                <span id="statusText">Connected</span>
+            </div>
+            <div>
+                <button class="btn btn-secondary" id="btnBack">← Back</button>
+                <button class="btn btn-primary" id="btnConfirm">Confirm Blueprint →</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/wizard/wizard-app.js" type="module"></script>
+</body>
+</html>

@@ -1,29 +1,55 @@
-"""Reusable Streamlit components for the Wizard workflow.
+"""UI component helpers for the Wizard workflow.
 
-The concrete UI widgets (blueprint editor, test table, approvals, etc.) will be
-implemented in subsequent tasks. For now we expose typed stubs so other modules
-can import them without raising errors.
+This module contains helper functions for generating UI-related data structures
+and messages to send to the Web UI frontend via WebSocket.
 """
 
 from __future__ import annotations
 
 from typing import Any
 
-import streamlit as st
 
+def create_stage_progress_data(
+    current_stage: str, completed_stages: list[str]
+) -> dict[str, Any]:
+    """Create stage progress indicator data for UI.
 
-def render_placeholder(message: str = "Component under construction") -> None:
-    """Render a lightweight placeholder component."""
+    Args:
+        current_stage: Current workflow stage ID
+        completed_stages: List of completed stage IDs
 
-    st.warning(message)
-
-
-def send_mcp_to_cursor(payload: Any) -> None:
-    """Stub for the MCP gateway.
-
-    The concrete integration will arrive in Epic 3 once the workflow engine can
-    assemble the final prompt.
+    Returns:
+        Dictionary with stage progress information for frontend rendering
     """
+    stages = [
+        "COLLECT_CONTEXT",
+        "INSIGHT_CLASSIFICATION",
+        "REVIEW_BLUEPRINT",
+        "REVIEW_TEST_MATRIX",
+        "GENERATE_IMPLEMENTATION",
+        "REVIEW_TRACE",
+    ]
 
-    _ = payload
-    st.write("MCP gateway stub invoked.")
+    return {
+        "current": current_stage,
+        "completed": completed_stages,
+        "all_stages": stages,
+    }
+
+
+def create_mermaid_editor_data(mermaid_source: str, version: int = 1) -> dict[str, Any]:
+    """Create Mermaid editor component data.
+
+    Args:
+        mermaid_source: Mermaid diagram source code
+        version: Version number of the diagram
+
+    Returns:
+        Dictionary with Mermaid editor data for frontend
+    """
+    return {
+        "type": "mermaid_editor",
+        "source": mermaid_source,
+        "version": version,
+        "editable": True,
+    }

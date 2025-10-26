@@ -686,6 +686,11 @@ async def handle_websocket_message(manager: "WebUIManager", session, data: dict)
     else:
         debug_log(f"未知的消息類型: {message_type}")
 
+    # Setup wizard routes
+    from .wizard_routes import setup_wizard_routes
+
+    setup_wizard_routes(manager.app)
+
 
 async def _delayed_server_stop(manager: "WebUIManager"):
     """延遲停止服務器"""

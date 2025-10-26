@@ -3,16 +3,16 @@
 from .guide_engine import (
     ConfigError,
     LLMError,
+    RoutineRegistry,
     StateError,
     StepDefinition,
-    WorkflowEngine,
 )
 
 
 __all__ = [
     "ConfigError",
     "LLMError",
+    "RoutineRegistry",
     "StateError",
     "StepDefinition",
-    "WorkflowEngine",
 ]

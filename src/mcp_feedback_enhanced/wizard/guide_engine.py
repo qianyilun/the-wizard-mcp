@@ -1,9 +1,8 @@
-"""Workflow engine configuration and validation for The Wizard.
+"""Workflow routine configuration loader and validator for The Wizard.
 
-This module loads the Spec-Then-Code workflow definition from YAML and performs
-schema validation so subsequent tasks can focus on the state machine
-implementation. Runtime behaviour (session state, transitions) will be
-introduced in later tasks.
+This module loads workflow definitions (like RIPER-5) from YAML files and performs
+schema validation. Runtime behavior (session state, transitions, execution) is
+handled by separate session and engine modules.
 """
 
 from __future__ import annotations
@@ -38,8 +37,12 @@ class StepDefinition:
     raw: Mapping[str, Any]
 
 
-class WorkflowEngine:
-    """Configuration-aware workflow engine for The Wizard.
+class RoutineRegistry:
+    """Registry for workflow routine configurations.
+
+    This class loads and validates workflow definitions from YAML files.
+    It does NOT handle runtime state or transitions - that's the job of
+    WizardSession and WorkflowEngine.
 
     Parameters
     ----------
